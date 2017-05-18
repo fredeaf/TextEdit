@@ -2,8 +2,10 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PushbackInputStream;
+import java.lang.reflect.Array;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -19,7 +21,7 @@ import javax.swing.text.DocumentFilter;
  * @author Jesper Buus Nielsen
  *
  */
-public class DocumentEventCapturer extends DocumentFilter {
+public class  DocumentEventCapturer extends DocumentFilter {
 
 	/*
      * We are using a blocking queue for two reasons: 
@@ -38,6 +40,8 @@ public class DocumentEventCapturer extends DocumentFilter {
 	protected ObjectOutputStream objectOutputStream=null;
 	protected PushbackInputStream pushbackInputStream;
 	protected DistributedTextEditor distributedTextEditor;
+	protected Boolean isReplay= false;
+	protected int[] clock = {0,0};
 	/**
 	 * If the queue is empty, then the call will block until an element arrives.
 	 * If the thread gets interrupted while waiting, we throw InterruptedException.
@@ -54,23 +58,27 @@ public class DocumentEventCapturer extends DocumentFilter {
 			throws BadLocationException {
 
 		/* Queue a copy of the event and then modify the textarea */
-		if (socket!=null){
+		if (socket!=null&& !isReplay){
 			try {
-				objectOutputStream.writeObject(new TextInsertEvent(offset,str));
+				increaseClock();
+				objectOutputStream.writeObject(new TextInsertEvent(offset,str,clock));
 			}catch (Exception e){}
 		}
 		super.insertString(fb, offset, str, a);
+		isReplay=false;
 	}
     
 	public void remove(FilterBypass fb, int offset, int length)
 			throws BadLocationException {
 		/* Queue a copy of the event and then modify the textarea */
-		if (socket!=null){
+		if (socket!=null&&!isReplay){
 			try {
-				objectOutputStream.writeObject(new TextRemoveEvent(offset,length));
+				increaseClock();
+				objectOutputStream.writeObject(new TextRemoveEvent(offset,length,clock));
 			}catch (Exception e){}
 		}
 		super.remove(fb, offset, length);
+		isReplay=false;
 	}
     
 	public void replace(FilterBypass fb, int offset,
@@ -80,18 +88,21 @@ public class DocumentEventCapturer extends DocumentFilter {
 
 		/* Queue a copy of the event and then modify the text */
 		if (length > 0) {
-			if (socket!=null){
+			if (socket!=null&&!isReplay){
 				try {
-					objectOutputStream.writeObject(new TextRemoveEvent(offset,length));
+					increaseClock();
+					objectOutputStream.writeObject(new TextRemoveEvent(offset,length,clock));
 				}catch (Exception e){}
 			}
 		}
-		if (socket!=null){
+		if (socket!=null&&!isReplay){
 			try {
-				objectOutputStream.writeObject(new TextInsertEvent(offset,str));
+				increaseClock();
+				objectOutputStream.writeObject(new TextInsertEvent(offset,str,clock));
 			}catch (Exception e){}
 		}
 		super.replace(fb, offset, length, str, a);
+		isReplay=false;
 	}
 	protected void registerOnPort(int portNumber) {
 		try {
@@ -164,5 +175,16 @@ public class DocumentEventCapturer extends DocumentFilter {
 		objectInputStream=null;
 		objectOutputStream=null;
 		pushbackInputStream=null;
+	}
+	protected void setIsReplay(){
+		isReplay=true;
+	}
+	protected void increaseClock(){
+		if(distributedTextEditor.isServer()){
+			clock[0]++;
+		}
+		else {
+			clock[1]++;
+		}
 	}
 }

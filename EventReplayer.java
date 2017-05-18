@@ -14,11 +14,12 @@ import java.net.ServerSocket;
 public class EventReplayer implements Runnable {
 	
 	private DocumentEventCapturer dec;
-	private JTextArea area;
+	private JTextArea area,area2;
 
-	public EventReplayer(DocumentEventCapturer dec, JTextArea area) {
+	public EventReplayer(DocumentEventCapturer dec, JTextArea area,JTextArea area2) {
 		this.dec = dec;
 		this.area = area;
+		this.area2 = area2;
 	}
 	
 	public void run() {
@@ -31,7 +32,9 @@ public class EventReplayer implements Runnable {
 					EventQueue.invokeLater(new Runnable() {
 						public void run() {
 							try {
+								dec.setIsReplay();
 								area.insert(tie.getText(), tie.getOffset());
+								area2.append("recived:"+tie.getText()+" \n");
 							} catch (Exception e) {
 								System.err.println(e);
 								/* We catch all axceptions, as an uncaught exception would make the
@@ -45,6 +48,7 @@ public class EventReplayer implements Runnable {
 					EventQueue.invokeLater(new Runnable() {
 						public void run() {
 							try {
+								dec.setIsReplay();
 								area.replaceRange(null, tre.getOffset(), tre.getOffset()+tre.getLength());
 							} catch (Exception e) {
 								System.err.println(e);

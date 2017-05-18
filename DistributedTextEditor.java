@@ -12,7 +12,7 @@ public class DistributedTextEditor extends JFrame {
 	private JTextArea area2 = new JTextArea(20,120);
 	private JTextField ipaddress = new JTextField("IP address here");
 	private JTextField portNumber = new JTextField("Port number here");
-    
+    private boolean isServer=false;
 	private EventReplayer er;
 	private Thread ert;
     
@@ -82,7 +82,7 @@ public class DistributedTextEditor extends JFrame {
 				"Try to type and delete stuff in the top area.\n" +
 				"Then figure out how it works.\n", 0);
 
-		er = new EventReplayer(dec, area2);
+		er = new EventReplayer(dec, area1,area2);
 		ert = new Thread(er);
 		ert.start();
 	}
@@ -108,6 +108,7 @@ public class DistributedTextEditor extends JFrame {
 			SaveAs.setEnabled(false);
 			dec.registerOnPort(Integer.parseInt(portNumber.getText()));
 			dec.waitForConnectionFromClient();
+			isServer=true;
 		}
 	};
 
@@ -209,5 +210,7 @@ public class DistributedTextEditor extends JFrame {
 	public static void main(String[] arg) {
 		new DistributedTextEditor();
 	}
-
+	public boolean isServer(){
+		return isServer;
+	}
 }
