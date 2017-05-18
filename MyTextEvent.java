@@ -9,10 +9,10 @@ import java.util.Vector;
 public class MyTextEvent implements Serializable{
 	MyTextEvent(int offset, int[] v) {
 		this.offset = offset;
-		this.clock=v;
+		clock1=v[0];
+		clock2=v[1];
 	}
-	private int offset;
-	private int[] clock;
+	private int offset, clock1, clock2;
 	int getOffset() { return offset; }
-	int[] getClock(){return clock;}
+	int[] getClock(){return new int[]{clock1, clock2};}
 }

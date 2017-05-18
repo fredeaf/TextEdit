@@ -82,7 +82,7 @@ public class DistributedTextEditor extends JFrame {
 				"Try to type and delete stuff in the top area.\n" +
 				"Then figure out how it works.\n", 0);
 
-		er = new EventReplayer(dec, area1,area2);
+		er = new EventReplayer(dec, area1,area2,this);
 		ert = new Thread(er);
 		ert.start();
 	}

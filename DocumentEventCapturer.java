@@ -2,10 +2,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PushbackInputStream;
-import java.lang.reflect.Array;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -41,7 +39,7 @@ public class  DocumentEventCapturer extends DocumentFilter {
 	protected PushbackInputStream pushbackInputStream;
 	protected DistributedTextEditor distributedTextEditor;
 	protected Boolean isReplay= false;
-	protected int[] clock = {0,0};
+	protected static int[] clock = {0,0};
 	/**
 	 * If the queue is empty, then the call will block until an element arrives.
 	 * If the thread gets interrupted while waiting, we throw InterruptedException.
@@ -60,7 +58,8 @@ public class  DocumentEventCapturer extends DocumentFilter {
 		/* Queue a copy of the event and then modify the textarea */
 		if (socket!=null&& !isReplay){
 			try {
-				increaseClock();
+				increaseMyClock();
+
 				objectOutputStream.writeObject(new TextInsertEvent(offset,str,clock));
 			}catch (Exception e){}
 		}
@@ -73,7 +72,7 @@ public class  DocumentEventCapturer extends DocumentFilter {
 		/* Queue a copy of the event and then modify the textarea */
 		if (socket!=null&&!isReplay){
 			try {
-				increaseClock();
+				increaseMyClock();
 				objectOutputStream.writeObject(new TextRemoveEvent(offset,length,clock));
 			}catch (Exception e){}
 		}
@@ -90,14 +89,14 @@ public class  DocumentEventCapturer extends DocumentFilter {
 		if (length > 0) {
 			if (socket!=null&&!isReplay){
 				try {
-					increaseClock();
+					increaseMyClock();
 					objectOutputStream.writeObject(new TextRemoveEvent(offset,length,clock));
 				}catch (Exception e){}
 			}
 		}
 		if (socket!=null&&!isReplay){
 			try {
-				increaseClock();
+				increaseMyClock();
 				objectOutputStream.writeObject(new TextInsertEvent(offset,str,clock));
 			}catch (Exception e){}
 		}
@@ -179,7 +178,7 @@ public class  DocumentEventCapturer extends DocumentFilter {
 	protected void setIsReplay(){
 		isReplay=true;
 	}
-	protected void increaseClock(){
+	protected void increaseMyClock(){
 		if(distributedTextEditor.isServer()){
 			clock[0]++;
 		}
@@ -187,4 +186,13 @@ public class  DocumentEventCapturer extends DocumentFilter {
 			clock[1]++;
 		}
 	}
+	protected void increaseOtherClock(int[] i){
+		if(!distributedTextEditor.isServer()){
+			clock[0]=i[0];
+		}
+		else {
+			clock[1]=i[1];
+		}
+	}
+
 }

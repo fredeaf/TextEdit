@@ -14,5 +14,6 @@ public class TextInsertEvent extends MyTextEvent {
 		this.text = text;
 	}
 	public String getText() { return text; }
+
 }
 
