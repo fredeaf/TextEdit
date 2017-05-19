@@ -176,6 +176,7 @@ public class DistributedTextEditor extends JFrame {
 		changed = false;
 		Save.setEnabled(false);
 		SaveAs.setEnabled(false);
+		er.resetQue();
 		dec.disconnect();
 	}
     

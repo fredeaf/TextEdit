@@ -40,6 +40,7 @@ public class  DocumentEventCapturer extends DocumentFilter {
 	protected DistributedTextEditor distributedTextEditor;
 	protected Boolean isReplay= false;
 	protected static int[] clock = {0,0};
+	protected int lamport =0;
 	/**
 	 * If the queue is empty, then the call will block until an element arrives.
 	 * If the thread gets interrupted while waiting, we throw InterruptedException.
@@ -59,8 +60,8 @@ public class  DocumentEventCapturer extends DocumentFilter {
 		if (socket!=null&& !isReplay){
 			try {
 				increaseMyClock();
-
-				objectOutputStream.writeObject(new TextInsertEvent(offset,str,clock));
+				lamport++;
+				objectOutputStream.writeObject(new TextInsertEvent(offset,str,clock,lamport));
 			}catch (Exception e){}
 		}
 		super.insertString(fb, offset, str, a);
@@ -73,7 +74,8 @@ public class  DocumentEventCapturer extends DocumentFilter {
 		if (socket!=null&&!isReplay){
 			try {
 				increaseMyClock();
-				objectOutputStream.writeObject(new TextRemoveEvent(offset,length,clock));
+				lamport++;
+				objectOutputStream.writeObject(new TextRemoveEvent(offset,length,clock,lamport));
 			}catch (Exception e){}
 		}
 		super.remove(fb, offset, length);
@@ -90,14 +92,16 @@ public class  DocumentEventCapturer extends DocumentFilter {
 			if (socket!=null&&!isReplay){
 				try {
 					increaseMyClock();
-					objectOutputStream.writeObject(new TextRemoveEvent(offset,length,clock));
+					lamport++;
+					objectOutputStream.writeObject(new TextRemoveEvent(offset,length,clock,lamport));
 				}catch (Exception e){}
 			}
 		}
 		if (socket!=null&&!isReplay){
 			try {
 				increaseMyClock();
-				objectOutputStream.writeObject(new TextInsertEvent(offset,str,clock));
+				lamport++;
+				objectOutputStream.writeObject(new TextInsertEvent(offset,str,clock,lamport));
 			}catch (Exception e){}
 		}
 		super.replace(fb, offset, length, str, a);
@@ -174,6 +178,10 @@ public class  DocumentEventCapturer extends DocumentFilter {
 		objectInputStream=null;
 		objectOutputStream=null;
 		pushbackInputStream=null;
+		clock[0]=0;
+		clock[0]=0;
+		lamport=0;
+
 	}
 	protected void setIsReplay(){
 		isReplay=true;
@@ -193,6 +201,12 @@ public class  DocumentEventCapturer extends DocumentFilter {
 		else {
 			clock[1]=i[1];
 		}
+	}
+	protected int[] getClock(){
+		return clock;
+	}
+	protected int getLamport(){
+		return lamport;
 	}
 
 }

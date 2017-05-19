@@ -1,6 +1,7 @@
 import javax.swing.JTextArea;
 import java.awt.EventQueue;
 import java.net.ServerSocket;
+import java.util.ArrayList;
 
 /**
  * 
@@ -16,6 +17,9 @@ public class EventReplayer implements Runnable {
 	private DocumentEventCapturer dec;
 	private JTextArea area,area2;
 	private DistributedTextEditor editor;
+	private ArrayList<MyTextEvent> que = new ArrayList<>();
+					MyTextEvent mte;
+
 
 	public EventReplayer(DocumentEventCapturer dec, JTextArea area,JTextArea area2,DistributedTextEditor editor) {
 		this.dec = dec;
@@ -29,14 +33,21 @@ public class EventReplayer implements Runnable {
 		boolean wasInterrupted = false;
 		while (!wasInterrupted) {
 			try {
-				MyTextEvent mte = dec.take();
-				if (mte instanceof TextInsertEvent) {
+				if(!que.isEmpty()){
+					mte = que.get(0);
+					que.remove(0);}
+				else {
+					mte = dec.take();  }
+				if (mte instanceof TextInsertEvent || ) {
 					final TextInsertEvent tie = (TextInsertEvent)mte;
 					EventQueue.invokeLater(new Runnable() {
 						public void run() {
 							//if(!editor.isServer()){try {Thread.sleep(5000);} catch (InterruptedException e) {e.printStackTrace();}}
 							try {
-
+								if(!checkClocks(tie.getClock(),tie.getLamport())){
+									que.add(tie);
+									return;
+								}
 								dec.setIsReplay();
 								area.insert(tie.getText(), tie.getOffset());
 								dec.increaseOtherClock(tie.getClock());
@@ -55,6 +66,9 @@ public class EventReplayer implements Runnable {
 					EventQueue.invokeLater(new Runnable() {
 						public void run() {
 							try {
+								if(checkClocks(tre.getClock(),tre.getLamport())){
+										que.add(tre);
+								}   	return;
 								dec.setIsReplay();
 								area.replaceRange(null, tre.getOffset(), tre.getOffset()+tre.getLength());
 								dec.increaseOtherClock(tre.getClock());
@@ -75,7 +89,41 @@ public class EventReplayer implements Runnable {
 				wasInterrupted = true;
 			}
 
+
 		}
 		System.out.println("I'm the thread running the EventReplayer, now I die!");
+	}
+	private boolean checkClocks(int[] recievedClock, int recivedLamport){
+		if(editor.isServer()) {
+			if(recievedClock[0]!=dec.getClock()[0]){
+				//TODO
+				area2.append("Concurrency hit \n");
+				return false;
+
+			}
+			if(recivedLamport !=dec.getLamport()){
+				//TODO
+				area2.append("bad Lamport\n");
+				return false;
+
+			}
+		}
+		else {
+			if(recievedClock[1]!=dec.getClock()[1]){
+				//TODO
+				area2.append("Concurrency hit \n");
+				return false;
+			}
+			if(recivedLamport !=dec.getLamport()){
+				//TODO
+				area2.append("bad Lamport\n");
+				return false;
+			}
+
+		}
+		return true;
+	}
+	public void resetQue(){
+		que = new ArrayList<>();
 	}
 }
