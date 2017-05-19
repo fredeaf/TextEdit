@@ -38,7 +38,7 @@ public class EventReplayer implements Runnable {
 					que.remove(0);}
 				else {
 					mte = dec.take();  }
-				if (mte instanceof TextInsertEvent || ) {
+				if (mte instanceof TextInsertEvent) {
 					final TextInsertEvent tie = (TextInsertEvent)mte;
 					EventQueue.invokeLater(new Runnable() {
 						public void run() {
@@ -68,7 +68,7 @@ public class EventReplayer implements Runnable {
 							try {
 								if(checkClocks(tre.getClock(),tre.getLamport())){
 										que.add(tre);
-								}   	return;
+								return;}
 								dec.setIsReplay();
 								area.replaceRange(null, tre.getOffset(), tre.getOffset()+tre.getLength());
 								dec.increaseOtherClock(tre.getClock());
